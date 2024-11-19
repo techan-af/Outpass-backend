@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // Set this in your .env file
+}
+
+model User {
+  id       Int      @id @default(autoincrement())
+  name     String
+  email    String   @unique
+  password String
+  role     String   // e.g., 'student', 'counselor', 'admin'
+  createdAt DateTime @default(now())
+
+  students Student[] @relation("CounselorToStudent") // One counselor can have many students
+}
+
+model Student {
+  id                Int     @id @default(autoincrement())
+  name              String
+  rollNumber        String  @unique
+  registrationNumber String @unique
+  year              Int
+  counselorId       Int?    // Foreign key
+  counselor         User?   @relation("CounselorToStudent", fields: [counselorId], references: [id]) // Relation to User
+  createdAt         DateTime @default(now())
+
+  leaveRequests LeaveRequest[]
+}
+
+model LeaveRequest {
+  id        Int      @id @default(autoincrement())
+  reason    String
+  startDate DateTime
+  endDate   DateTime
+  status    String   // 'pending', 'approved', 'rejected'
+  studentId Int      // Foreign key
+  student   Student  @relation(fields: [studentId], references: [id]) // Relation to Student
+  createdAt DateTime @default(now())
+}
