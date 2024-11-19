@@ -26,6 +26,7 @@ model Student {
   year              Int
   counselorId       Int?    // Foreign key
   counselor         User?   @relation("CounselorToStudent", fields: [counselorId], references: [id]) // Relation to User
+  password          String
   createdAt         DateTime @default(now())
 
   leaveRequests LeaveRequest[]

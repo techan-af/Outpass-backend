@@ -5,6 +5,7 @@ require("dotenv").config();
 const PORT = process.env.PORT || 3000;
 const prisma = new PrismaClient();
 const app = express();
+const bcrypt = require("bcrypt");
 
 app.use(bodyParser.json());
 
@@ -14,20 +15,32 @@ app.listen(PORT, () => {
 });
 
 app.post("/students/register", async (req, res) => {
-    const { name, rollNumber, registrationNumber, year } = req.body;
+    const { name, rollNumber, registrationNumber, year, password } = req.body;
   
     try {
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+  
+      // Create the student
       const student = await prisma.student.create({
         data: {
           name,
           rollNumber,
           registrationNumber,
           year,
+          password: hashedPassword, // Save the hashed password
         },
       });
-      res.status(201).json({ message: "Student registered successfully", student });
+  
+      res.status(201).json({
+        message: "Student registered successfully",
+        student,
+      });
     } catch (error) {
-      res.status(500).json({ error: "Error registering student", details: error.message });
+      res.status(500).json({
+        error: "Error registering student",
+        details: error.message,
+      });
     }
   });
   app.get("/students/:rollNumber", async (req, res) => {
@@ -102,22 +115,32 @@ app.post("/students/register", async (req, res) => {
       res.status(500).json({ error: "Error fetching students", details: error.message });
     }
   });
-  app.post("/users", async (req, res) => {
-    const { name, email, password, role } = req.body;
+  app.post("/users/register", async (req, res) => {
+    const { name, email, role, password } = req.body;
   
     try {
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+  
+      // Create the user
       const user = await prisma.user.create({
         data: {
           name,
           email,
-          password, // For simplicity, store raw passwords. In production, hash the password!
           role,
+          password: hashedPassword, // Save the hashed password
         },
       });
   
-      res.status(201).json({ message: "User created successfully", user });
+      res.status(201).json({
+        message: "User registered successfully",
+        user,
+      });
     } catch (error) {
-      res.status(500).json({ error: "Error creating user", details: error.message });
+      res.status(500).json({
+        error: "Error registering user",
+        details: error.message,
+      });
     }
   });
   app.get("/users", async (req, res) => {
@@ -235,4 +258,71 @@ app.post("/students/register", async (req, res) => {
       });
     }
   });
+  // Student Login
+app.post("/students/login", async (req, res) => {
+    const { rollNumber, password } = req.body;
   
+    try {
+      // Find the student by rollNumber
+      const student = await prisma.student.findUnique({
+        where: { rollNumber },
+      });
+  
+      if (!student) {
+        return res.status(404).json({ error: "Student not found" });
+      }
+  
+      // Verify the password
+      const isPasswordValid = await bcrypt.compare(password, student.password);
+  
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+  
+      // Respond with rollNumber
+      res.status(200).json({
+        message: "Login successful",
+        rollNumber: student.rollNumber,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Error logging in",
+        details: error.message,
+      });
+    }
+  });
+
+  // User Login
+app.post("/users/login", async (req, res) => {
+    const { email, password } = req.body;
+  
+    try {
+      // Find the user by email
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+  
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+  
+      // Verify the password
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+  
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+  
+      // Respond with user ID
+      res.status(200).json({
+        message: "Login successful",
+        userId: user.id,
+        role: user.role,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Error logging in",
+        details: error.message,
+      });
+    }
+  });
