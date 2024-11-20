@@ -261,18 +261,18 @@ app.post("/students/register", async (req, res) => {
   // Student Login
 app.post("/students/login", async (req, res) => {
     const { rollNumber, password } = req.body;
-  
     try {
       // Find the student by rollNumber
       const student = await prisma.student.findUnique({
         where: { rollNumber },
       });
-  
+      console.log(student.password);
       if (!student) {
         return res.status(404).json({ error: "Student not found" });
       }
   
       // Verify the password
+
       const isPasswordValid = await bcrypt.compare(password, student.password);
   
       if (!isPasswordValid) {
