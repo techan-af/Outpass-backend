@@ -5,7 +5,7 @@ require("dotenv").config();
 const PORT = process.env.PORT || 3000;
 const prisma = new PrismaClient();
 const app = express();
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 app.use(bodyParser.json());
 
